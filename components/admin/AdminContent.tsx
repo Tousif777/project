@@ -96,6 +96,8 @@ export default function AdminContent() {
     notes: ''
   });
 
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; admin: SubAdmin | null }>({ open: false, admin: null });
+
   useEffect(() => {
     fetch('/api/admin/sub-admins')
       .then(res => res.json())
@@ -172,9 +174,6 @@ export default function AdminContent() {
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
-    if (!confirm('Are you sure you want to delete this sub-admin? This action cannot be undone.')) {
-      return;
-    }
     setSuccess('');
     try {
       const res = await fetch(`/api/admin/sub-admins/${adminId}`, { method: 'DELETE' });
@@ -191,6 +190,7 @@ export default function AdminContent() {
       setSuccess('Failed to delete sub-admin.');
     }
     setTimeout(() => setSuccess(''), 3000);
+    setDeleteDialog({ open: false, admin: null });
   };
 
   const handleToggleStatus = async (adminId: string) => {
@@ -237,7 +237,7 @@ export default function AdminContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Page Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 text-white" />
@@ -247,10 +247,9 @@ export default function AdminContent() {
                 <p className="text-slate-600">Manage sub-administrators and their permissions</p>
               </div>
             </div>
-            
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add Sub-Admin
                 </Button>
@@ -454,7 +453,8 @@ export default function AdminContent() {
           )}
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Removed statistics cards for Active, Pending, Inactive as requested */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             <Card className="border-slate-200 shadow-sm">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -463,48 +463,6 @@ export default function AdminContent() {
                     <p className="text-2xl font-bold text-slate-900">{subAdmins.length}</p>
                   </div>
                   <Users className="h-8 w-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Active</p>
-                    <p className="text-2xl font-bold text-emerald-700">
-                      {subAdmins.filter(admin => admin.status === 'active').length}
-                    </p>
-                  </div>
-                  <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Pending</p>
-                    <p className="text-2xl font-bold text-yellow-700">
-                      {subAdmins.filter(admin => admin.status === 'pending').length}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-yellow-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Inactive</p>
-                    <p className="text-2xl font-bold text-red-700">
-                      {subAdmins.filter(admin => admin.status === 'inactive').length}
-                    </p>
-                  </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -592,7 +550,7 @@ export default function AdminContent() {
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => handleDeleteAdmin(admin.id)}
+                              onClick={() => setDeleteDialog({ open: true, admin })}
                               className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -760,6 +718,24 @@ export default function AdminContent() {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {loading ? 'Updating...' : 'Update Sub-Admin'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteDialog.open} onOpenChange={open => setDeleteDialog(d => ({ ...d, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Sub-Admin</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <b>{deleteDialog.admin?.firstName} {deleteDialog.admin?.lastName}</b>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, admin: null })}>Cancel</Button>
+            <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDeleteAdmin(deleteDialog.admin!.id)}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>

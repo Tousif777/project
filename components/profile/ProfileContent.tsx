@@ -142,7 +142,7 @@ export default function ProfileContent() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Page Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <User className="w-5 h-5 text-white" />
@@ -152,11 +152,10 @@ export default function ProfileContent() {
                 <p className="text-slate-600">Manage your personal information and preferences</p>
               </div>
             </div>
-            
-            <Button 
+            <Button
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "default"}
-              className={isEditing ? "" : "bg-blue-600 hover:bg-blue-700 text-white"}
+              className={isEditing ? "w-full sm:w-auto" : "bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"}
             >
               <Edit3 className="mr-2 h-4 w-4" />
               {isEditing ? 'Cancel' : 'Edit Profile'}
