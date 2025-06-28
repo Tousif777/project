@@ -20,27 +20,6 @@ export interface AuthState {
   loading: boolean;
 }
 
-// Simulated user for development
-const DEMO_USER: User = {
-  id: '1',
-  username: 'admin',
-  email: 'admin@fba-dashboard.com',
-  role: 'super-admin',
-  permissions: {
-    canRunCalculations: true,
-    canViewReports: true,
-    canManageSettings: true,
-    canExportData: true,
-    canManageSubAdmins: true
-  }
-};
-
-// Demo credentials
-const DEMO_CREDENTIALS = {
-  username: 'admin',
-  password: 'password123'
-};
-
 export class AuthService {
   private static readonly AUTH_KEY = 'fba_auth_token';
   private static readonly USER_KEY = 'fba_user_data';
@@ -73,7 +52,14 @@ export class AuthService {
     }
   }
 
-  static logout(): void {
+  static async logout(): Promise<void> {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Failed to logout from server:', error);
+    }
+
+    // Always clear client-side data and redirect
     Cookies.remove(this.AUTH_KEY);
     Cookies.remove(this.USER_KEY);
     window.location.href = '/login';

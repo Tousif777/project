@@ -18,8 +18,8 @@ export default function Header() {
   const router = useRouter();
   const user = AuthService.getCurrentUser();
 
-  const handleLogout = () => {
-    AuthService.logout();
+  const handleLogout = async () => {
+    await AuthService.logout();
   };
 
   const handleProfileClick = () => {
