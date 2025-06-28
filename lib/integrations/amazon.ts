@@ -6,3 +6,9 @@ export async function testAmazonConnection(credentials: { clientId: string; clie
   // Simulate success
   return { success: true };
 }
+
+// Placeholder: fetch FBA inventory from Amazon
+export async function getAmazonFbaInventory() {
+  // TODO: Implement real API call
+  return [];
+}

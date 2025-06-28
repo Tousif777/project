@@ -6,3 +6,9 @@ export async function testGoogleSheetsConnection(credentials: { serviceAccountKe
   // Simulate success
   return { success: true };
 }
+
+// Placeholder: generate shipment file (e.g., Google Sheets)
+export async function generateShipmentFile(data: any) {
+  // TODO: Implement real file generation
+  return 'https://docs.google.com/spreadsheets/d/example-generated';
+}

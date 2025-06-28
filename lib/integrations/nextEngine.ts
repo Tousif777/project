@@ -6,3 +6,9 @@ export async function testNextEngineConnection(credentials: { apiKey: string; ap
   // Simulate success
   return { success: true };
 }
+
+// Placeholder: fetch sales or inventory data from Next Engine
+export async function getNextEngineData(type: 'sales' | 'inventory') {
+  // TODO: Implement real API call
+  return [];
+}

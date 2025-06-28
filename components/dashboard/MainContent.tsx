@@ -100,55 +100,39 @@ export default function MainContent() {
     if (!confirm('Are you sure you want to run the automation now? This will calculate FBA transfer quantities and generate a new shipment file.')) {
       return;
     }
-
     setIsRunning(true);
-    setLogs([]);
-
-    // Simulate processing with realistic logs
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setLogs(['Initializing FBA shipment automation...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLogs(prev => [...prev, 'Connecting to Next Engine API...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    setLogs(prev => [...prev, 'Fetching inventory data from Next Engine...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLogs(prev => [...prev, 'Connecting to Amazon SP-API...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLogs(prev => [...prev, 'Retrieving sales data for 18 products...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    setLogs(prev => [...prev, 'Calculating optimal FBA transfer quantities...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setLogs(prev => [...prev, 'Generating Google Spreadsheet...']);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLogs(prev => [...prev, 'Automation completed successfully! Generated shipment file with 165 units across 18 SKUs.']);
-
-    // Add new successful run to history
-    const newRun: AutomationRun = {
-      id: `2025-01-21-${Date.now()}`,
-      timestamp: new Date().toLocaleString('en-US', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      }),
-      status: 'success',
-      totalFbaQty: 165,
-      productsProcessed: 18,
-      shipmentFileUrl: 'https://docs.google.com/spreadsheets/d/example-new',
-      errorDetails: null
-    };
-
-    setAutomationRuns(prev => [newRun, ...prev]);
-    setLastSuccessfulRun(newRun.timestamp);
+    setLogs(['Starting automation...']);
+    try {
+      const res = await fetch('/api/automation', { method: 'POST' });
+      const result = await res.json();
+      if (result.success) {
+        setLogs(prev => [...prev, 'Automation completed successfully!']);
+        const newRun: AutomationRun = {
+          id: `run-${Date.now()}`,
+          timestamp: new Date().toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }),
+          status: 'success',
+          totalFbaQty: 0, // TODO: update with real value
+          productsProcessed: 0, // TODO: update with real value
+          shipmentFileUrl: result.shipmentFileUrl,
+          errorDetails: null
+        };
+        setAutomationRuns(prev => [newRun, ...prev]);
+      } else {
+        setLogs(prev => [...prev, 'Automation failed: ' + (result.errorDetails || result.message)]);
+        const newRun: AutomationRun = {
+          id: `run-${Date.now()}`,
+          timestamp: new Date().toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }),
+          status: 'failed',
+          totalFbaQty: null,
+          productsProcessed: null,
+          shipmentFileUrl: null,
+          errorDetails: result.errorDetails || result.message
+        };
+        setAutomationRuns(prev => [newRun, ...prev]);
+      }
+    } catch (err: any) {
+      setLogs(prev => [...prev, 'Automation failed: ' + err.message]);
+    }
     setIsRunning(false);
   };
 
