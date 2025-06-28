@@ -339,37 +339,6 @@ export default function ProfileContent() {
             </CardContent>
           </Card>
 
-          {/* Account Statistics */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-emerald-600" />
-                <span>Account Statistics</span>
-              </CardTitle>
-              <CardDescription>
-                Your account activity and usage statistics
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-slate-900">127</div>
-                  <div className="text-sm text-slate-600">Total Calculations</div>
-                </div>
-                
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-700">{getMemberSince()}</div>
-                  <div className="text-sm text-blue-600">Member Since</div>
-                </div>
-                
-                <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                  <div className="text-2xl font-bold text-emerald-700">98.5%</div>
-                  <div className="text-sm text-emerald-600">Success Rate</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Save Button */}
           {isEditing && (
             <div className="flex justify-end space-x-3">
