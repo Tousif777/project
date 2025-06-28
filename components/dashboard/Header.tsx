@@ -48,7 +48,7 @@ export default function Header() {
               <Package className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">FBA Shipment Automation Dashboard</h1>
+              <h1 className="text-xl font-bold text-slate-900">ShipDash</h1>
             </div>
           </div>
 

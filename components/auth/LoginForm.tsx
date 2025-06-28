@@ -47,7 +47,7 @@ export default function LoginForm() {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-slate-900">
-              FBA Shipment Dashboard
+              ShipDash
             </CardTitle>
             <CardDescription className="text-slate-600 mt-2">
               Sign in to access your shipment automation tools

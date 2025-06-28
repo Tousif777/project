@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,12 +33,75 @@ export default function SettingsContent() {
       sunday: false
     }
   });
-
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [systemStatus, setSystemStatus] = useState({
+    version: '',
+    status: '',
+    lastUpdate: '',
+    uptime: ''
+  });
+  const [statusLoading, setStatusLoading] = useState(true);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        const autoRun = data.find((s: any) => s.key === 'automation.autoRun')?.value ?? false;
+        const schedule = data.find((s: any) => s.key === 'automation.schedule')?.value ?? '15:00';
+        const selectedDays = data.find((s: any) => s.key === 'automation.selectedDays')?.value ?? {
+          monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false
+        };
+        setAutomation({ autoRun, schedule, selectedDays });
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load settings');
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    setStatusLoading(true);
+    fetch('/api/system-status')
+      .then(res => res.json())
+      .then(data => {
+        setSystemStatus(data);
+        setStatusLoading(false);
+      })
+      .catch(() => setStatusLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    setSaved(false);
+    setError('');
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'automation.autoRun', value: automation.autoRun })
+        }),
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'automation.schedule', value: automation.schedule })
+        }),
+        fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'automation.selectedDays', value: automation.selectedDays })
+        })
+      ]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError('Failed to save settings');
+    }
+    setLoading(false);
   };
 
   const handleDayChange = (day: string, checked: boolean) => {
@@ -61,6 +124,17 @@ export default function SettingsContent() {
     sunday: 'Sunday'
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Clock className="h-5 w-5 animate-spin text-blue-600" />
+          <span className="text-blue-600">Loading settings...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
@@ -73,7 +147,7 @@ export default function SettingsContent() {
               <Settings className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+              <h1 className="text-2xl font-bold text-slate-900">ShipDash</h1>
               <p className="text-slate-600">Configure your automation preferences</p>
             </div>
           </div>
@@ -83,6 +157,15 @@ export default function SettingsContent() {
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertDescription className="text-emerald-800">
                 Settings saved successfully!
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {error && (
+            <Alert className="border-red-200 bg-red-50">
+              <CheckCircle2 className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {error}
               </AlertDescription>
             </Alert>
           )}
@@ -171,24 +254,28 @@ export default function SettingsContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Version</span>
-                  <Badge variant="secondary">v1.0.0</Badge>
+              {statusLoading ? (
+                <div className="text-slate-500 text-sm">Loading system status...</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Version</span>
+                    <Badge variant="secondary">{systemStatus.version || '-'}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Status</span>
+                    <Badge className="bg-emerald-100 text-emerald-700">{systemStatus.status || '-'}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Last Update</span>
+                    <span className="text-sm text-slate-900">{systemStatus.lastUpdate || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-slate-600">Uptime</span>
+                    <span className="text-sm text-slate-900">{systemStatus.uptime || '-'}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Status</span>
-                  <Badge className="bg-emerald-100 text-emerald-700">Operational</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Last Update</span>
-                  <span className="text-sm text-slate-900">2 days ago</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-slate-600">Uptime</span>
-                  <span className="text-sm text-slate-900">99.9%</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

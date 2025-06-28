@@ -5,8 +5,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'FBA Shipment Dashboard - Automation & Analytics',
-  description: 'Streamlined FBA shipment automation and analytics dashboard',
+  title: 'ShipDash',
+  description: 'Smart, simple FBA shipment automation dashboard',
 };
 
 export default function RootLayout({
