@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,24 @@ import {
 } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
 
+interface Credentials {
+  nextEngine: {
+    apiKey: string;
+    apiSecret: string;
+    endpoint: string;
+  };
+  amazon: {
+    clientId: string;
+    clientSecret: string;
+    refreshToken: string;
+    region: string;
+  };
+  google: {
+    serviceAccountKey: string;
+    spreadsheetId: string;
+  };
+}
+
 export default function ApiSettingsContent() {
   const [showSecrets, setShowSecrets] = useState({
     nextEngine: false,
@@ -28,42 +46,107 @@ export default function ApiSettingsContent() {
     google: false
   });
 
-  const [credentials, setCredentials] = useState({
+  const [credentials, setCredentials] = useState<Credentials>({
     nextEngine: {
-      apiKey: '••••••••••••••••',
-      apiSecret: '••••••••••••••••',
-      endpoint: 'https://api.nextengine.com'
+      apiKey: '',
+      apiSecret: '',
+      endpoint: ''
     },
     amazon: {
-      clientId: '••••••••••••••••',
-      clientSecret: '••••••••••••••••',
-      refreshToken: '••••••••••••••••',
-      region: 'us-east-1'
+      clientId: '',
+      clientSecret: '',
+      refreshToken: '',
+      region: ''
     },
     google: {
-      serviceAccountKey: '••••••••••••••••',
-      spreadsheetId: '••••••••••••••••'
+      serviceAccountKey: '',
+      spreadsheetId: ''
     }
   });
 
-  const [connectionStatus, setConnectionStatus] = useState({
-    nextEngine: 'connected',
-    amazon: 'connected',
-    google: 'connected'
-  });
+  // Dynamically compute connection status
+  const computeStatus = (fields: Record<string, string>) => {
+    return Object.values(fields).every(v => v && v.trim() !== '') ? 'connected' : 'not configured';
+  };
+
+  const connectionStatus = {
+    nextEngine: computeStatus(credentials.nextEngine),
+    amazon: computeStatus(credentials.amazon),
+    google: computeStatus(credentials.google)
+  };
 
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [testing, setTesting] = useState('');
+  const [testError, setTestError] = useState<{ [key: string]: string }>({});
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/api-settings')
+      .then(res => res.json())
+      .then(data => {
+        // Map settings to credentials state
+        const cred: Credentials = { ...credentials };
+        data.forEach((item: any) => {
+          if (item.key.startsWith('nextEngine.')) (cred.nextEngine as any)[item.key.replace('nextEngine.', '')] = item.value;
+          if (item.key.startsWith('amazon.')) (cred.amazon as any)[item.key.replace('amazon.', '')] = item.value;
+          if (item.key.startsWith('google.')) (cred.google as any)[item.key.replace('google.', '')] = item.value;
+        });
+        setCredentials(cred);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError('Failed to load API settings');
+        setLoading(false);
+      });
+  }, []);
+
+  const handleSave = async () => {
+    setSaved(false);
+    setError('');
+    setLoading(true);
+    try {
+      // Save each credential as a separate key
+      const updates: Promise<any>[] = [];
+      Object.entries(credentials).forEach(([service, fields]) => {
+        Object.entries(fields).forEach(([key, value]) => {
+          updates.push(fetch('/api/api-settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: `${service}.${key}`, value })
+          }));
+        });
+      });
+      await Promise.all(updates);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError('Failed to save API settings');
+    }
+    setLoading(false);
   };
 
   const handleTest = async (service: string) => {
     setTesting(service);
-    // Simulate API test
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    setTestError(prev => ({ ...prev, [service]: '' }));
+    let creds: any = credentials[service as keyof Credentials];
+    try {
+      const res = await fetch('/api/api-settings/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ service, credentials: creds })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setTestError(prev => ({ ...prev, [service]: '' }));
+        alert('Connection successful!');
+      } else {
+        setTestError(prev => ({ ...prev, [service]: result.error || 'Connection failed' }));
+      }
+    } catch {
+      setTestError(prev => ({ ...prev, [service]: 'Connection test failed' }));
+    }
     setTesting('');
   };
 
@@ -83,6 +166,17 @@ export default function ApiSettingsContent() {
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <TestTube className="h-5 w-5 animate-spin text-blue-600" />
+          <span className="text-blue-600">Loading API settings...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -106,6 +200,15 @@ export default function ApiSettingsContent() {
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <AlertDescription className="text-emerald-800">
                 API settings saved successfully!
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {error && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {error}
               </AlertDescription>
             </Alert>
           )}
@@ -197,6 +300,8 @@ export default function ApiSettingsContent() {
                   )}
                 </Button>
               </div>
+
+              {testError.nextEngine && <p className="text-red-600 text-xs mt-2">{testError.nextEngine}</p>}
             </CardContent>
           </Card>
 
@@ -298,6 +403,8 @@ export default function ApiSettingsContent() {
                   )}
                 </Button>
               </div>
+
+              {testError.amazon && <p className="text-red-600 text-xs mt-2">{testError.amazon}</p>}
             </CardContent>
           </Card>
 
@@ -375,6 +482,8 @@ export default function ApiSettingsContent() {
                   )}
                 </Button>
               </div>
+
+              {testError.google && <p className="text-red-600 text-xs mt-2">{testError.google}</p>}
             </CardContent>
           </Card>
 
