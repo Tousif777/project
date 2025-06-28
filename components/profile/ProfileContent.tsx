@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,40 +20,120 @@ import {
   CheckCircle2,
   Building,
   Globe,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
-import { AuthService } from '@/lib/auth';
 import Header from '@/components/dashboard/Header';
 
-export default function ProfileContent() {
-  const currentUser = AuthService.getCurrentUser();
-  
-  const [profile, setProfile] = useState({
-    username: currentUser?.username || 'admin',
-    email: currentUser?.email || 'admin@fba-dashboard.com',
-    firstName: 'John',
-    lastName: 'Smith',
-    phone: '+1 (555) 123-4567',
-    company: 'FBA Solutions Inc.',
-    location: 'San Francisco, CA',
-    timezone: 'Pacific Standard Time (PST)',
-    bio: 'Experienced FBA seller focused on automation and efficiency. Managing multiple product lines across various Amazon marketplaces.',
-    website: 'https://fbasolutions.com'
-  });
+// Define a type for the profile data
+interface ProfileData {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  company: string;
+  location: string;
+  timezone: string;
+  bio: string;
+  website: string;
+  role: string;
+  createdAt: string;
+}
 
+export default function ProfileContent() {
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [originalProfile, setOriginalProfile] = useState<ProfileData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/profile');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch profile');
+        }
+
+        setProfile(data.user);
+        setOriginalProfile(data.user);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    if (!profile) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      setProfile(data.user);
+      setOriginalProfile(data.user);
+      setIsEditing(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
+    setProfile(originalProfile);
     setIsEditing(false);
-    // Reset to original values if needed
   };
+
+  const getMemberSince = () => {
+    if (!profile?.createdAt) return 'N/A';
+    const memberSinceDate = new Date(profile.createdAt);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - memberSinceDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} days`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return null; // Or a 'profile not found' message
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -134,7 +214,7 @@ export default function ProfileContent() {
                   <Input
                     id="firstName"
                     value={profile.firstName}
-                    onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, firstName: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -145,7 +225,7 @@ export default function ProfileContent() {
                   <Input
                     id="lastName"
                     value={profile.lastName}
-                    onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, lastName: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -156,7 +236,7 @@ export default function ProfileContent() {
                   <Input
                     id="username"
                     value={profile.username}
-                    onChange={(e) => setProfile(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, username: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -168,7 +248,7 @@ export default function ProfileContent() {
                     id="email"
                     type="email"
                     value={profile.email}
-                    onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, email: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -179,7 +259,7 @@ export default function ProfileContent() {
                   <Input
                     id="phone"
                     value={profile.phone}
-                    onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, phone: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -190,7 +270,7 @@ export default function ProfileContent() {
                   <Input
                     id="website"
                     value={profile.website}
-                    onChange={(e) => setProfile(prev => ({ ...prev, website: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, website: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -202,7 +282,7 @@ export default function ProfileContent() {
                 <Textarea
                   id="bio"
                   value={profile.bio}
-                  onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
+                  onChange={(e) => setProfile(prev => ({ ...prev!, bio: e.target.value }))}
                   disabled={!isEditing}
                   className={!isEditing ? "bg-slate-50" : ""}
                   rows={3}
@@ -229,7 +309,7 @@ export default function ProfileContent() {
                   <Input
                     id="company"
                     value={profile.company}
-                    onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, company: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -240,7 +320,7 @@ export default function ProfileContent() {
                   <Input
                     id="location"
                     value={profile.location}
-                    onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, location: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -251,7 +331,7 @@ export default function ProfileContent() {
                   <Input
                     id="timezone"
                     value={profile.timezone}
-                    onChange={(e) => setProfile(prev => ({ ...prev, timezone: e.target.value }))}
+                    onChange={(e) => setProfile(prev => ({ ...prev!, timezone: e.target.value }))}
                     disabled={!isEditing}
                     className={!isEditing ? "bg-slate-50" : ""}
                   />
@@ -279,7 +359,7 @@ export default function ProfileContent() {
                 </div>
                 
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-700">45 days</div>
+                  <div className="text-2xl font-bold text-blue-700">{getMemberSince()}</div>
                   <div className="text-sm text-blue-600">Member Since</div>
                 </div>
                 
@@ -297,9 +377,13 @@ export default function ProfileContent() {
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
+              <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           )}

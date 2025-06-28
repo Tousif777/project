@@ -1,5 +1,4 @@
-// Placeholder auth utilities for development
-// This will be replaced with real authentication in Phase 2
+import Cookies from 'js-cookie';
 
 export interface User {
   id: string;
@@ -47,40 +46,54 @@ export class AuthService {
   private static readonly USER_KEY = 'fba_user_data';
 
   static async login(username: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-      // Store auth token and user data
-      localStorage.setItem(this.AUTH_KEY, 'demo_token_123');
-      localStorage.setItem(this.USER_KEY, JSON.stringify(DEMO_USER));
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Login failed' };
+      }
+
+      // Store auth token and user data in cookies
+      Cookies.set(this.AUTH_KEY, 'mongodb_token_123', { expires: 7 }); // Expires in 7 days
+      Cookies.set(this.USER_KEY, JSON.stringify(data.user), { expires: 7 });
       
-      return { success: true, user: DEMO_USER };
-    }
+      return { success: true, user: data.user };
 
-    return { success: false, error: 'Invalid username or password' };
+    } catch (err) {
+      console.error('Login service error:', err);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
   }
 
   static logout(): void {
-    localStorage.removeItem(this.AUTH_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    Cookies.remove(this.AUTH_KEY);
+    Cookies.remove(this.USER_KEY);
     window.location.href = '/login';
   }
 
   static isAuthenticated(): boolean {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem(this.AUTH_KEY) !== null;
+    return !!Cookies.get(this.AUTH_KEY);
   }
 
   static getCurrentUser(): User | null {
-    if (typeof window === 'undefined') return null;
-    const userData = localStorage.getItem(this.USER_KEY);
-    return userData ? JSON.parse(userData) : null;
+    const userData = Cookies.get(this.USER_KEY);
+    try {
+      return userData ? JSON.parse(userData) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
   static getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(this.AUTH_KEY);
+    return Cookies.get(this.AUTH_KEY) || null;
   }
 
   static hasPermission(permission: keyof User['permissions']): boolean {

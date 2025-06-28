@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Package, AlertCircle } from 'lucide-react';
 import { AuthService } from '@/lib/auth';
+import Link from 'next/link';
 
 export default function LoginForm() {
   const [username, setUsername] = useState('');
@@ -97,13 +98,7 @@ export default function LoginForm() {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-800 font-medium">Demo Credentials</p>
-              <p className="text-xs text-blue-600 mt-1">
-                Username: <code className="bg-blue-100 px-1 rounded">admin</code> • 
-                Password: <code className="bg-blue-100 px-1 rounded">password123</code>
-              </p>
-            </div>
+
           </CardContent>
 
           <CardFooter>
