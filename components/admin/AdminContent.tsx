@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,7 +51,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import Header from '@/components/dashboard/Header';
-import { AdminService } from '@/lib/admin';
 
 interface SubAdmin {
   id: string;
@@ -73,62 +72,7 @@ interface SubAdmin {
 }
 
 export default function AdminContent() {
-  const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([
-    {
-      id: '1',
-      username: 'john_doe',
-      email: 'john@company.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'sub-admin',
-      status: 'active',
-      permissions: {
-        canRunCalculations: true,
-        canViewReports: true,
-        canManageSettings: false,
-        canExportData: true
-      },
-      createdAt: '2024-01-15',
-      lastLogin: '2024-01-20 14:30',
-      createdBy: 'admin'
-    },
-    {
-      id: '2',
-      username: 'sarah_smith',
-      email: 'sarah@company.com',
-      firstName: 'Sarah',
-      lastName: 'Smith',
-      role: 'viewer',
-      status: 'active',
-      permissions: {
-        canRunCalculations: false,
-        canViewReports: true,
-        canManageSettings: false,
-        canExportData: false
-      },
-      createdAt: '2024-01-18',
-      lastLogin: '2024-01-19 09:15',
-      createdBy: 'admin'
-    },
-    {
-      id: '3',
-      username: 'mike_wilson',
-      email: 'mike@company.com',
-      firstName: 'Mike',
-      lastName: 'Wilson',
-      role: 'sub-admin',
-      status: 'pending',
-      permissions: {
-        canRunCalculations: true,
-        canViewReports: true,
-        canManageSettings: false,
-        canExportData: true
-      },
-      createdAt: '2024-01-20',
-      createdBy: 'admin'
-    }
-  ]);
-
+  const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<SubAdmin | null>(null);
@@ -152,56 +96,77 @@ export default function AdminContent() {
     notes: ''
   });
 
+  useEffect(() => {
+    fetch('/api/admin/sub-admins')
+      .then(res => res.json())
+      .then(data => setSubAdmins(data));
+  }, []);
+
   const handleCreateAdmin = async () => {
     setLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const admin: SubAdmin = {
-      id: Date.now().toString(),
-      ...newAdmin,
-      status: 'pending',
-      createdAt: new Date().toISOString().split('T')[0],
-      createdBy: 'admin'
-    };
-    
-    setSubAdmins(prev => [...prev, admin]);
-    setIsCreateDialogOpen(false);
-    setNewAdmin({
-      username: '',
-      email: '',
-      firstName: '',
-      lastName: '',
-      password: '',
-      role: 'sub-admin',
-      permissions: {
-        canRunCalculations: true,
-        canViewReports: true,
-        canManageSettings: false,
-        canExportData: false
-      },
-      notes: ''
-    });
-    
-    setSuccess('Sub-admin created successfully! Invitation email sent.');
+    setSuccess('');
+    try {
+      const res = await fetch('/api/admin/sub-admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAdmin),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setSuccess(err.error || 'Failed to create sub-admin.');
+      } else {
+        setSuccess('Sub-admin created successfully! Invitation email sent.');
+        setIsCreateDialogOpen(false);
+        setNewAdmin({
+          username: '',
+          email: '',
+          firstName: '',
+          lastName: '',
+          password: '',
+          role: 'sub-admin',
+          permissions: {
+            canRunCalculations: true,
+            canViewReports: true,
+            canManageSettings: false,
+            canExportData: false
+          },
+          notes: ''
+        });
+        // Refresh list
+        const updated = await fetch('/api/admin/sub-admins').then(r => r.json());
+        setSubAdmins(updated);
+      }
+    } catch (e) {
+      setSuccess('Failed to create sub-admin.');
+    }
     setTimeout(() => setSuccess(''), 5000);
     setLoading(false);
   };
 
   const handleEditAdmin = async () => {
     if (!selectedAdmin) return;
-    
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setSubAdmins(prev => prev.map(admin => 
-      admin.id === selectedAdmin.id ? selectedAdmin : admin
-    ));
-    
-    setIsEditDialogOpen(false);
-    setSelectedAdmin(null);
-    setSuccess('Sub-admin updated successfully!');
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/admin/sub-admins/${selectedAdmin.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selectedAdmin),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setSuccess(err.error || 'Failed to update sub-admin.');
+      } else {
+        setSuccess('Sub-admin updated successfully!');
+        setIsEditDialogOpen(false);
+        setSelectedAdmin(null);
+        // Refresh list
+        const updated = await fetch('/api/admin/sub-admins').then(r => r.json());
+        setSubAdmins(updated);
+      }
+    } catch (e) {
+      setSuccess('Failed to update sub-admin.');
+    }
     setTimeout(() => setSuccess(''), 3000);
     setLoading(false);
   };
@@ -210,18 +175,40 @@ export default function AdminContent() {
     if (!confirm('Are you sure you want to delete this sub-admin? This action cannot be undone.')) {
       return;
     }
-    
-    setSubAdmins(prev => prev.filter(admin => admin.id !== adminId));
-    setSuccess('Sub-admin deleted successfully!');
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/admin/sub-admins/${adminId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        setSuccess(err.error || 'Failed to delete sub-admin.');
+      } else {
+        setSuccess('Sub-admin deleted successfully!');
+        // Refresh list
+        const updated = await fetch('/api/admin/sub-admins').then(r => r.json());
+        setSubAdmins(updated);
+      }
+    } catch (e) {
+      setSuccess('Failed to delete sub-admin.');
+    }
     setTimeout(() => setSuccess(''), 3000);
   };
 
   const handleToggleStatus = async (adminId: string) => {
-    setSubAdmins(prev => prev.map(admin => 
-      admin.id === adminId 
-        ? { ...admin, status: admin.status === 'active' ? 'inactive' : 'active' }
-        : admin
-    ));
+    setSuccess('');
+    try {
+      const res = await fetch(`/api/admin/sub-admins/${adminId}/toggle-status`, { method: 'PATCH' });
+      if (!res.ok) {
+        const err = await res.json();
+        setSuccess(err.error || 'Failed to toggle status.');
+      } else {
+        // Refresh list
+        const updated = await fetch('/api/admin/sub-admins').then(r => r.json());
+        setSubAdmins(updated);
+      }
+    } catch (e) {
+      setSuccess('Failed to toggle status.');
+    }
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   const getStatusBadge = (status: string) => {
@@ -283,7 +270,7 @@ export default function AdminContent() {
                       <Input
                         id="firstName"
                         value={newAdmin.firstName}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, firstName: e.target.value }))}
+                        onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, firstName: e.target.value }))}
                         placeholder="John"
                       />
                     </div>
@@ -292,7 +279,7 @@ export default function AdminContent() {
                       <Input
                         id="lastName"
                         value={newAdmin.lastName}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, lastName: e.target.value }))}
+                        onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, lastName: e.target.value }))}
                         placeholder="Doe"
                       />
                     </div>
@@ -304,7 +291,7 @@ export default function AdminContent() {
                       <Input
                         id="username"
                         value={newAdmin.username}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, username: e.target.value }))}
+                        onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, username: e.target.value }))}
                         placeholder="john_doe"
                       />
                     </div>
@@ -314,7 +301,7 @@ export default function AdminContent() {
                         id="email"
                         type="email"
                         value={newAdmin.email}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, email: e.target.value }))}
                         placeholder="john@company.com"
                       />
                     </div>
@@ -327,7 +314,7 @@ export default function AdminContent() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         value={newAdmin.password}
-                        onChange={(e) => setNewAdmin(prev => ({ ...prev, password: e.target.value }))}
+                        onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, password: e.target.value }))}
                         placeholder="Enter temporary password"
                       />
                       <Button
@@ -351,7 +338,7 @@ export default function AdminContent() {
                           name="role"
                           value="sub-admin"
                           checked={newAdmin.role === 'sub-admin'}
-                          onChange={(e) => setNewAdmin(prev => ({ ...prev, role: e.target.value as 'sub-admin' | 'viewer' }))}
+                          onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, role: e.target.value as 'sub-admin' | 'viewer' }))}
                         />
                         <span>Sub-Admin</span>
                       </label>
@@ -361,7 +348,7 @@ export default function AdminContent() {
                           name="role"
                           value="viewer"
                           checked={newAdmin.role === 'viewer'}
-                          onChange={(e) => setNewAdmin(prev => ({ ...prev, role: e.target.value as 'sub-admin' | 'viewer' }))}
+                          onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, role: e.target.value as 'sub-admin' | 'viewer' }))}
                         />
                         <span>Viewer</span>
                       </label>
@@ -378,7 +365,7 @@ export default function AdminContent() {
                         </div>
                         <Switch
                           checked={newAdmin.permissions.canRunCalculations}
-                          onCheckedChange={(checked) => setNewAdmin(prev => ({
+                          onCheckedChange={(checked) => setNewAdmin((prev: typeof newAdmin) => ({
                             ...prev,
                             permissions: { ...prev.permissions, canRunCalculations: checked }
                           }))}
@@ -392,7 +379,7 @@ export default function AdminContent() {
                         </div>
                         <Switch
                           checked={newAdmin.permissions.canViewReports}
-                          onCheckedChange={(checked) => setNewAdmin(prev => ({
+                          onCheckedChange={(checked) => setNewAdmin((prev: typeof newAdmin) => ({
                             ...prev,
                             permissions: { ...prev.permissions, canViewReports: checked }
                           }))}
@@ -406,7 +393,7 @@ export default function AdminContent() {
                         </div>
                         <Switch
                           checked={newAdmin.permissions.canManageSettings}
-                          onCheckedChange={(checked) => setNewAdmin(prev => ({
+                          onCheckedChange={(checked) => setNewAdmin((prev: typeof newAdmin) => ({
                             ...prev,
                             permissions: { ...prev.permissions, canManageSettings: checked }
                           }))}
@@ -420,7 +407,7 @@ export default function AdminContent() {
                         </div>
                         <Switch
                           checked={newAdmin.permissions.canExportData}
-                          onCheckedChange={(checked) => setNewAdmin(prev => ({
+                          onCheckedChange={(checked) => setNewAdmin((prev: typeof newAdmin) => ({
                             ...prev,
                             permissions: { ...prev.permissions, canExportData: checked }
                           }))}
@@ -434,7 +421,7 @@ export default function AdminContent() {
                     <Textarea
                       id="notes"
                       value={newAdmin.notes}
-                      onChange={(e) => setNewAdmin(prev => ({ ...prev, notes: e.target.value }))}
+                      onChange={(e) => setNewAdmin((prev: typeof newAdmin) => ({ ...prev, notes: e.target.value }))}
                       placeholder="Additional notes about this sub-admin..."
                       rows={3}
                     />
@@ -537,9 +524,7 @@ export default function AdminContent() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Permissions</TableHead>
-                    <TableHead>Last Login</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -560,9 +545,6 @@ export default function AdminContent() {
                         {getRoleBadge(admin.role)}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(admin.status)}
-                      </TableCell>
-                      <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {admin.permissions.canRunCalculations && (
                             <Badge variant="outline" className="text-xs">Run</Badge>
@@ -577,11 +559,6 @@ export default function AdminContent() {
                             <Badge variant="outline" className="text-xs">Export</Badge>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-slate-600">
-                          {admin.lastLogin || 'Never'}
-                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-slate-600">{admin.createdAt}</span>
@@ -604,21 +581,15 @@ export default function AdminContent() {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleToggleStatus(admin.id)}
-                            >
-                              {admin.status === 'active' ? (
-                                <>
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Deactivate
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                                  Activate
-                                </>
-                              )}
-                            </DropdownMenuItem>
+                            {/* Only show Deactivate if admin is active, otherwise hide */}
+                            {admin.status === 'active' && (
+                              <DropdownMenuItem
+                                onClick={() => handleToggleStatus(admin.id)}
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => handleDeleteAdmin(admin.id)}
@@ -657,7 +628,7 @@ export default function AdminContent() {
                   <Input
                     id="editFirstName"
                     value={selectedAdmin.firstName}
-                    onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, firstName: e.target.value } : null)}
+                    onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, firstName: e.target.value } : null)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -665,7 +636,7 @@ export default function AdminContent() {
                   <Input
                     id="editLastName"
                     value={selectedAdmin.lastName}
-                    onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, lastName: e.target.value } : null)}
+                    onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, lastName: e.target.value } : null)}
                   />
                 </div>
               </div>
@@ -676,7 +647,7 @@ export default function AdminContent() {
                   <Input
                     id="editUsername"
                     value={selectedAdmin.username}
-                    onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, username: e.target.value } : null)}
+                    onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, username: e.target.value } : null)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -685,7 +656,7 @@ export default function AdminContent() {
                     id="editEmail"
                     type="email"
                     value={selectedAdmin.email}
-                    onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, email: e.target.value } : null)}
+                    onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, email: e.target.value } : null)}
                   />
                 </div>
               </div>
@@ -699,7 +670,7 @@ export default function AdminContent() {
                       name="editRole"
                       value="sub-admin"
                       checked={selectedAdmin.role === 'sub-admin'}
-                      onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, role: e.target.value as 'sub-admin' | 'viewer' } : null)}
+                      onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, role: e.target.value as 'sub-admin' | 'viewer' } : null)}
                     />
                     <span>Sub-Admin</span>
                   </label>
@@ -709,7 +680,7 @@ export default function AdminContent() {
                       name="editRole"
                       value="viewer"
                       checked={selectedAdmin.role === 'viewer'}
-                      onChange={(e) => setSelectedAdmin(prev => prev ? { ...prev, role: e.target.value as 'sub-admin' | 'viewer' } : null)}
+                      onChange={(e) => setSelectedAdmin((prev: SubAdmin | null) => prev ? { ...prev, role: e.target.value as 'sub-admin' | 'viewer' } : null)}
                     />
                     <span>Viewer</span>
                   </label>
@@ -726,7 +697,7 @@ export default function AdminContent() {
                     </div>
                     <Switch
                       checked={selectedAdmin.permissions.canRunCalculations}
-                      onCheckedChange={(checked) => setSelectedAdmin(prev => prev ? {
+                      onCheckedChange={(checked) => setSelectedAdmin((prev: SubAdmin | null) => prev ? {
                         ...prev,
                         permissions: { ...prev.permissions, canRunCalculations: checked }
                       } : null)}
@@ -740,7 +711,7 @@ export default function AdminContent() {
                     </div>
                     <Switch
                       checked={selectedAdmin.permissions.canViewReports}
-                      onCheckedChange={(checked) => setSelectedAdmin(prev => prev ? {
+                      onCheckedChange={(checked) => setSelectedAdmin((prev: SubAdmin | null) => prev ? {
                         ...prev,
                         permissions: { ...prev.permissions, canViewReports: checked }
                       } : null)}
@@ -754,7 +725,7 @@ export default function AdminContent() {
                     </div>
                     <Switch
                       checked={selectedAdmin.permissions.canManageSettings}
-                      onCheckedChange={(checked) => setSelectedAdmin(prev => prev ? {
+                      onCheckedChange={(checked) => setSelectedAdmin((prev: SubAdmin | null) => prev ? {
                         ...prev,
                         permissions: { ...prev.permissions, canManageSettings: checked }
                       } : null)}
@@ -768,7 +739,7 @@ export default function AdminContent() {
                     </div>
                     <Switch
                       checked={selectedAdmin.permissions.canExportData}
-                      onCheckedChange={(checked) => setSelectedAdmin(prev => prev ? {
+                      onCheckedChange={(checked) => setSelectedAdmin((prev: SubAdmin | null) => prev ? {
                         ...prev,
                         permissions: { ...prev.permissions, canExportData: checked }
                       } : null)}

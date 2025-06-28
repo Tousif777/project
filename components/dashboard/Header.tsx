@@ -87,10 +87,12 @@ export default function Header() {
                   <span>Settings</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem className="cursor-pointer" onClick={handleApiSettingsClick}>
-                  <Key className="mr-2 h-4 w-4" />
-                  <span>API Settings</span>
-                </DropdownMenuItem>
+                {AuthService.isSuperAdmin() && (
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleApiSettingsClick}>
+                    <Key className="mr-2 h-4 w-4" />
+                    <span>API Settings</span>
+                  </DropdownMenuItem>
+                )}
 
                 {AuthService.isSuperAdmin() && (
                   <DropdownMenuItem className="cursor-pointer" onClick={handleAdminClick}>
