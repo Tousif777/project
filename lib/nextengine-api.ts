@@ -131,15 +131,35 @@ export async function fetchNextEngineData(
   endpoint: string, 
   params: Record<string, any> = {},
   uid?: string,
-  state?: string
+  state?: string,
+  cookieTokens?: { accessToken?: string; refreshToken?: string }
 ) {
-  const token = await getAccessToken(clientId, clientSecret, uid, state);
+  // Use provided tokens from cookies if available, otherwise use in-memory tokens
+  let useAccessToken = cookieTokens?.accessToken || accessToken;
+  let useRefreshToken = cookieTokens?.refreshToken || refreshToken;
+
+  // If no tokens available and no uid/state provided, throw error
+  if (!useAccessToken && (!uid || !state)) {
+    throw new Error('Next Engine requires OAuth authorization. Please implement the OAuth flow: 1) Redirect user to get uid/state, 2) Use uid/state to get access_token');
+  }
+
+  // If no access token but we have uid/state, get new token
+  if (!useAccessToken && uid && state) {
+    const token = await getAccessToken(clientId, clientSecret, uid, state);
+    useAccessToken = token;
+    useRefreshToken = refreshToken; // refreshToken is set by getAccessToken
+  }
+
+  // Ensure we have a valid access token
+  if (!useAccessToken) {
+    throw new Error('Next Engine authentication failed: No valid access token available');
+  }
 
   // Add access_token and refresh_token to params for automatic token refresh
   const allParams = { 
     ...params, 
-    access_token: token,
-    ...(refreshToken && { refresh_token: refreshToken })
+    access_token: useAccessToken,
+    ...(useRefreshToken && { refresh_token: useRefreshToken })
   };
   const body = new URLSearchParams(allParams);
   const url = `${BASE_URL}/${endpoint}`;
@@ -154,18 +174,35 @@ export async function fetchNextEngineData(
     body,
   });
 
+  console.log(`Next Engine API response status: ${response.status}`);
+
   if (!response.ok) {
     const errorBody = await response.text();
+    console.error(`Next Engine API error response:`, errorBody);
     throw new Error(`Next Engine API request to ${endpoint} failed: ${response.status} ${errorBody}`);
   }
 
-  const result = await response.json();
+  // Check if response has content
+  const responseText = await response.text();
+  console.log(`Next Engine API response text length: ${responseText.length}`);
+  
+  if (!responseText || responseText.trim() === '') {
+    throw new Error(`Next Engine API returned empty response for endpoint: ${endpoint}`);
+  }
+
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch (parseError) {
+    console.error('Failed to parse Next Engine API response:', responseText);
+    throw new Error(`Invalid JSON response from Next Engine API: ${parseError}`);
+  }
   
   if (result.result === 'error') {
     throw new Error(`Next Engine API returned an error: ${result.message || JSON.stringify(result)}`);
   }
 
-  // Check if tokens were refreshed and update them
+  // Check if tokens were refreshed and update them (both in-memory and return new ones)
   if (result.access_token && result.refresh_token) {
     console.log('Next Engine tokens were refreshed automatically');
     accessToken = result.access_token;
@@ -173,7 +210,7 @@ export async function fetchNextEngineData(
     tokenExpiryTime = Date.now() + (24 * 60 * 60 * 1000) - (5 * 60 * 1000);
   }
 
-  return result.data || result;
+  return result;
 }
 
 /**

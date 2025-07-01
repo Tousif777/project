@@ -1,6 +1,8 @@
 import Header from '@/components/dashboard/Header';
 import MainContent from '@/components/dashboard/MainContent';
 import { NextEngineAuth } from '@/components/nextengine/NextEngineAuth';
+import { NextEngineApiTests } from '@/components/nextengine/NextEngineApiTests';
+import { AuthSuccessNotification } from '@/components/nextengine/AuthSuccessNotification';
 import { getTokensFromCookies, isNextEngineAuthenticated } from '@/lib/nextengine-api';
 import { Suspense } from 'react';
 
@@ -12,8 +14,12 @@ async function NextEngineStatus() {
   const { userInfo } = await getTokensFromCookies();
   
   return (
-    <div className="mb-6">
+    <div className="space-y-6">
       <NextEngineAuth 
+        isAuthenticated={isAuthenticated} 
+        userInfo={userInfo}
+      />
+      <NextEngineApiTests 
         isAuthenticated={isAuthenticated} 
         userInfo={userInfo}
       />
@@ -26,11 +32,25 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-50">
       <Header />
       <div className="container mx-auto px-4 py-6">
-        <Suspense fallback={<div>Loading Next Engine status...</div>}>
-          <NextEngineStatus />
-        </Suspense>
-        <MainContent />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Main Content - Left Side */}
+          <div className="xl:col-span-2">
+            <MainContent />
+          </div>
+          
+          {/* Next Engine Section - Right Side */}
+          <div className="xl:col-span-1">
+            <Suspense fallback={<div>Loading Next Engine status...</div>}>
+              <NextEngineStatus />
+            </Suspense>
+          </div>
+        </div>
       </div>
+      
+      {/* Auth Success/Error Notification */}
+      <Suspense fallback={null}>
+        <AuthSuccessNotification />
+      </Suspense>
     </div>
   );
 }

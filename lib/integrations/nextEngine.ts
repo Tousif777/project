@@ -29,7 +29,7 @@ export async function getNextEngineData(type: 'sales' | 'inventory') {
       const dateFrom = twoWeeksAgo.toISOString().split('T')[0];
       
       params = { 
-        fields: 'receive_order_id,receive_order_date,receive_order_shop_id,receive_order_shop_name,receive_order_total_amount,receive_order_confirm_date,receive_order_cancel_type',
+        fields: 'receive_order_id,receive_order_date,receive_order_total_amount',
         receive_order_date_from: dateFrom,
         receive_order_cancel_type: '0' // Only non-cancelled orders
       };
@@ -37,7 +37,7 @@ export async function getNextEngineData(type: 'sales' | 'inventory') {
       // Fetch stock data (在庫マスタ検索)
       endpoint = 'api_v1_master_stock/search';
       params = { 
-        fields: 'goods_id,goods_code,goods_name,stock_quantity,stock_free_quantity,stock_warehouse_id,stock_warehouse_name,stock_update_date',
+        fields: 'stock_goods_id,stock_quantity',
         stock_quantity_from: '1' // Only items with stock
       };
     } else {
