@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/seed.ts"
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/seed.ts",
+    "test:nextengine": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/test-nextengine.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -53,6 +54,7 @@
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
+    "googleapis": "^150.0.1",
     "input-otp": "^1.2.4",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -78,6 +80,7 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/uuid": "^10.0.0",
     "dotenv": "^17.0.0",
     "ts-node": "^10.9.2"
   }

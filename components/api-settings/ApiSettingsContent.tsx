@@ -23,9 +23,9 @@ import Header from '@/components/dashboard/Header';
 
 interface Credentials {
   nextEngine: {
-    apiKey: string;
-    apiSecret: string;
-    endpoint: string;
+    clientId: string;
+    clientSecret: string;
+    environment: string;
   };
   amazon: {
     clientId: string;
@@ -48,9 +48,9 @@ export default function ApiSettingsContent() {
 
   const [credentials, setCredentials] = useState<Credentials>({
     nextEngine: {
-      apiKey: '',
-      apiSecret: '',
-      endpoint: ''
+      clientId: '',
+      clientSecret: '',
+      environment: 'production'
     },
     amazon: {
       clientId: '',
@@ -230,15 +230,15 @@ export default function ApiSettingsContent() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ne-api-key">API Key</Label>
+                  <Label htmlFor="ne-client-id">Client ID</Label>
                   <div className="relative">
                     <Input
-                      id="ne-api-key"
+                      id="ne-client-id"
                       type={showSecrets.nextEngine ? "text" : "password"}
-                      value={credentials.nextEngine.apiKey}
+                      value={credentials.nextEngine.clientId}
                       onChange={(e) => setCredentials(prev => ({
                         ...prev,
-                        nextEngine: { ...prev.nextEngine, apiKey: e.target.value }
+                        nextEngine: { ...prev.nextEngine, clientId: e.target.value }
                       }))}
                     />
                     <Button
@@ -254,30 +254,34 @@ export default function ApiSettingsContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ne-api-secret">API Secret</Label>
+                  <Label htmlFor="ne-client-secret">Client Secret</Label>
                   <div className="relative">
                     <Input
-                      id="ne-api-secret"
+                      id="ne-client-secret"
                       type={showSecrets.nextEngine ? "text" : "password"}
-                      value={credentials.nextEngine.apiSecret}
+                      value={credentials.nextEngine.clientSecret}
                       onChange={(e) => setCredentials(prev => ({
                         ...prev,
-                        nextEngine: { ...prev.nextEngine, apiSecret: e.target.value }
+                        nextEngine: { ...prev.nextEngine, clientSecret: e.target.value }
                       }))}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="ne-endpoint">API Endpoint</Label>
-                  <Input
-                    id="ne-endpoint"
-                    value={credentials.nextEngine.endpoint}
+                  <Label htmlFor="ne-environment">Environment</Label>
+                  <select
+                    id="ne-environment"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={credentials.nextEngine.environment}
                     onChange={(e) => setCredentials(prev => ({
                       ...prev,
-                      nextEngine: { ...prev.nextEngine, endpoint: e.target.value }
+                      nextEngine: { ...prev.nextEngine, environment: e.target.value }
                     }))}
-                  />
+                  >
+                    <option value="production">Production</option>
+                    <option value="test">Test</option>
+                  </select>
                 </div>
               </div>
 

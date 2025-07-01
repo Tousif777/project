@@ -1,0 +1,169 @@
+# Private- FBA Shipment Automation
+
+Here’s the updated version.
+
+——————-
+Project Overview
+• This project aims to automate the calculation of inventory transfer quantities from the primary 3PL warehouse to Amazon FBA and generate the corresponding shipment file.
+• The goal is to minimize FBA storage costs while preventing stockouts through efficient allocation based on sales trends.
+
+⸻
+
+Data Sources
+
+To execute the logic, the following data sources are required:
+• Sales performance data (for Amazon FBA and other channels): from Next Engine
+• Inventory at 3PL locations: from Next Engine
+• Current inventory at Amazon FBA: from Amazon Seller Central
+
+⸻
+
+Inventory Types in 3PL
+
+Inventory is stored across the following three locations:
+
+1. Main warehouse inventory
+2. RSL (Rakuten Super Logistics) inventory
+3. LOGI (external logistics warehouse) inventory
+
+⸻
+
+Inventory Allocation Logic
+
+1. Sales-Based Allocation Calculation
+• Use the past two weeks of sales data from both FBA and other channels to determine the allocation ratio.
+• Example:
+• FBA sales = 20 units
+• Other channels = 50 units
+• Total = 70 units → FBA : Others = 2 : 5
+• If available inventory = 100 units:
+• Theoretical allocation → FBA = 29, Others = 71
+• However, if actual FBA sales (20) < theoretical FBA allocation (29),
+then limit FBA shipment to 20 units
+2. FBA Transfer Quantity Calculation
+• Final quantity to send to FBA =
+Calculated FBA allocation minus Current FBA inventory
+
+⸻
+
+3PL Inventory Allocation Logic
+
+Once the required FBA transfer quantity is determined:
+
+1. Subtract the quantity of RSL inventory from the main warehouse inventory. Define this result as A.
+2. If the required quantity ≤ A, ship entirely from the main warehouse.
+3. If the required quantity > A, ship A units from the main warehouse, and ship the remaining quantity from the LOGI warehouse.
+
+⸻
+
+Shipment File Filtering & Output
+
+After calculating the items and quantities to ship to FBA:
+
+1. Filter the list based on product type:
+• Products eligible for mail-sized package delivery
+• Products categorized as “60-size” (a standard shipping class)
+2. Generate the final shipment list based on this filtered data for dispatch processing.
+
+⸻
+
+Automation Frequency & Optimization
+• The automation process should run once every 7 to 10 days.
+• The execution interval may be adjusted based on inventory turnover and performance data.
+• Continuous improvement of the system will be driven by operational metrics and stockout/overstock avoidance results.
+
+---
+
+## **🔍 Questions to Help Me Set Up the Automation Properly**
+
+To build this tool smoothly, I just need a few details from you:
+
+---
+
+### **1. Where will the tool run?**
+
+Do you already have a server or hosting where I can install this tool?
+
+Or should I set up a new one for you (for example, on platforms like AWS or DigitalOcean)?
+
+Answer: AWS
+
+---
+
+### **2. How should the automation work?**
+
+Would you like it to run automatically (e.g., once a week)?
+
+Or should there be an option to run it manually when needed?
+
+Answer: auto run every 7 days/manual update
+
+---
+
+### **3. Do you want a dashboard?**
+
+Would you like a simple web page where you can
+
+- See the results
+- Download the shipment file.
+    
+    Or is it enough if the process runs and just gives you the file?
+    
+
+Answer: see results, error, download files
+
+---
+
+### **4. Do you already have access to these services?**
+
+- **Next Engine** (for sales and warehouse inventory)
+- **Amazon Seller Central** (for FBA inventory)
+
+If yes, can you share the access or help me get the API/login info?
+
+Answer: working on this now
+
+---
+
+### **6. What kind of file should be generated?**
+
+Would you prefer
+
+- Excel
+- CSV (spreadsheet)
+- Something else?
+
+Answer: google spreadsheet 
+
+---
+
+### **7. Who will use this tool?**
+
+Will only you use it, or will someone else need access too?
+
+Do you want it password-protected?
+
+Answer: admin shared ID need password 
+
+---
+
+### Credentials
+
+https://base.next-engine.org/users/sign_in
+
+https://base.next-engine.org/apps/make/6568/edit/
+ID:systemsfc35
+PW：zd6k@K_G
+
+I need this to get client ID and Client secret
+
+Production Environment 
+
+Client id: lm14ufypwQY8NG
+
+Client secret: flEyMQx9CIvdcKptRgmkjOisBS5G4TqPWYA2XhwU
+
+Test:
+
+Client Id: 8Dm17jfXKeLnYo
+Client Secret: Lpxa63k2JGcDreK4Q9wt1jWyIRH7hVXlvmAFCUfY
