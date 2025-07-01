@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Package, Settings, LogOut, User, Users, Key } from 'lucide-react';
+import { Package, Settings, LogOut, User, Users } from 'lucide-react';
 import { AuthService } from '@/lib/auth';
 
 export default function Header() {
@@ -32,10 +32,6 @@ export default function Header() {
 
   const handleAdminClick = () => {
     router.push('/admin');
-  };
-
-  const handleApiSettingsClick = () => {
-    router.push('/api-settings');
   };
 
   return (
@@ -86,13 +82,6 @@ export default function Header() {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
-
-                {AuthService.isSuperAdmin() && (
-                  <DropdownMenuItem className="cursor-pointer" onClick={handleApiSettingsClick}>
-                    <Key className="mr-2 h-4 w-4" />
-                    <span>API Settings</span>
-                  </DropdownMenuItem>
-                )}
 
                 {AuthService.isSuperAdmin() && (
                   <DropdownMenuItem className="cursor-pointer" onClick={handleAdminClick}>
