@@ -1,7 +1,5 @@
 # Private- FBA Shipment Automation
 
-Here’s the updated version.
-
 ——————-
 Project Overview
 • This project aims to automate the calculation of inventory transfer quantities from the primary 3PL warehouse to Amazon FBA and generate the corresponding shipment file.
@@ -72,98 +70,20 @@ Automation Frequency & Optimization
 • The execution interval may be adjusted based on inventory turnover and performance data.
 • Continuous improvement of the system will be driven by operational metrics and stockout/overstock avoidance results.
 
----
 
-## **🔍 Questions to Help Me Set Up the Automation Properly**
 
-To build this tool smoothly, I just need a few details from you:
 
----
 
-### **1. Where will the tool run?**
 
-Do you already have a server or hosting where I can install this tool?
-
-Or should I set up a new one for you (for example, on platforms like AWS or DigitalOcean)?
-
-Answer: AWS
-
----
-
-### **2. How should the automation work?**
-
-Would you like it to run automatically (e.g., once a week)?
-
-Or should there be an option to run it manually when needed?
-
-Answer: auto run every 7 days/manual update
-
----
-
-### **3. Do you want a dashboard?**
-
-Would you like a simple web page where you can
-
-- See the results
-- Download the shipment file.
-    
-    Or is it enough if the process runs and just gives you the file?
-    
-
-Answer: see results, error, download files
-
----
-
-### **4. Do you already have access to these services?**
-
-- **Next Engine** (for sales and warehouse inventory)
-- **Amazon Seller Central** (for FBA inventory)
-
-If yes, can you share the access or help me get the API/login info?
-
-Answer: working on this now
-
----
-
-### **6. What kind of file should be generated?**
-
-Would you prefer
-
-- Excel
-- CSV (spreadsheet)
-- Something else?
-
-Answer: google spreadsheet 
-
----
-
-### **7. Who will use this tool?**
-
-Will only you use it, or will someone else need access too?
-
-Do you want it password-protected?
-
-Answer: admin shared ID need password 
-
----
-
-### Credentials
-
-https://base.next-engine.org/users/sign_in
-
-https://base.next-engine.org/apps/make/6568/edit/
-ID:systemsfc35
-PW：zd6k@K_G
-
-I need this to get client ID and Client secret
-
-Production Environment 
+Production Environment  Next Engine
 
 Client id: lm14ufypwQY8NG
-
 Client secret: flEyMQx9CIvdcKptRgmkjOisBS5G4TqPWYA2XhwU
 
-Test:
 
-Client Id: 8Dm17jfXKeLnYo
-Client Secret: Lpxa63k2JGcDreK4Q9wt1jWyIRH7hVXlvmAFCUfY
+Production Aws Environment
+
+Client ID :amzn1.application-oa2-client.ca7916ecf75b4d25871379631568bdaf
+secret: amzn1.oa2-cs.v1.92be5c0d80699fd5a7c098362652d29fa500e68c94d4e32a21a547748a5281fc
+Seller ID:A3VHBS2IK6N9QF
+Marketplace is JP so its : JPamazon.co.jpA1VC38T7YXB528
