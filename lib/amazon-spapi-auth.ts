@@ -6,7 +6,7 @@ export function getAmazonAuthUrl() {
   const redirectUri = encodeURIComponent(`${process.env.NEXTAUTH_URL}/api/amazon/callback`);
   const state = Math.random().toString(36).substring(2, 15);
   
-  return `https://sellercentral.amazon.co.jp/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}`;
+  return `https://sellercentral.amazon.co.jp/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}&scope=sellingpartnerapi::migration&version=beta`;
 }
 
 export async function exchangeCodeForTokens(code: string) {

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/seed.ts",
+    "db:seed": "ts-node -P tsconfig.scripts.json scripts/seed.ts",
     "test:nextengine": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/test-nextengine.ts"
   },
   "dependencies": {

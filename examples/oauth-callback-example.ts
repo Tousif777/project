@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     console.log('User:', tokenData.pic_name);
 
     // Redirect to a success page or dashboard
-    return NextResponse.redirect(new URL('/dashboard?auth=success', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
 
   } catch (error) {
     console.error('OAuth callback error:', error);

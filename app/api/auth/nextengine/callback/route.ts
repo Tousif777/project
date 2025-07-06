@@ -53,8 +53,19 @@ export async function GET(request: NextRequest) {
     console.log('Company:', tokenData.company_name);
     console.log('User:', tokenData.pic_name);
 
+    // Get base URL from environment variable
+    const baseUrl = process.env.NEXTAUTH_URL || '';
+    if (!baseUrl) {
+      console.error('NEXTAUTH_URL environment variable is not set');
+      return NextResponse.redirect(new URL('/dashboard?error=config_error', request.url));
+    }
+    
+    // Create redirect URL using the base URL from environment variables
+    const redirectUrl = new URL('/dashboard', baseUrl).toString();
+    console.log('Redirecting to:', redirectUrl);
+    
     // Store tokens in cookies (for demo - use database for production)
-    const response_redirect = NextResponse.redirect(new URL('/dashboard?auth=success', request.url));
+    const response_redirect = NextResponse.redirect(redirectUrl);
     
     // Set secure cookies with tokens (expires in 1 day for access token)
     response_redirect.cookies.set('ne_access_token', tokenData.access_token, {

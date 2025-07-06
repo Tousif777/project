@@ -11,13 +11,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try a simpler redirect URI that might be pre-configured
-    const redirectUri = 'http://localhost:3000/callback';
+    // Use the redirect URI from environment variables
+    const redirectUri = process.env.NEXT_ENGINE_REDIRECT_URI;
     
-    // Use the correct Next Engine OAuth endpoint
+    if (!redirectUri) {
+      return NextResponse.json(
+        { error: 'Next Engine redirect URI not configured' }, 
+        { status: 500 }
+      );
+    }
+    
+    // Use the correct Next Engine OAuth endpoint with the configured redirect URI
     const oauthUrl = `https://base.next-engine.org/users/sign_in/?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     
-    console.log('Testing with simple redirect URI:', redirectUri);
+    console.log('Using redirect URI:', redirectUri);
     
     return NextResponse.json({ 
       oauthUrl,
