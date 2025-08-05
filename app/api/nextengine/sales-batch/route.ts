@@ -33,15 +33,46 @@ export async function POST(request: NextRequest) {
     // Fetch sales data from Next Engine API using the proper helper
     for (const sku of skus) {
       try {
+        // First, get the goods information to find the goods_id
+        const goodsData = await fetchNextEngineData(
+          process.env.NEXT_ENGINE_CLIENT_ID!,
+          process.env.NEXT_ENGINE_CLIENT_SECRET!,
+          'api_v1_master_goods/search',
+          {
+            'goods_id-eq': sku, // Use correct Next Engine API parameter format for goods code search
+            fields: 'goods_id,goods_name' // Removed invalid 'goods_code' field
+          },
+          undefined, // uid
+          undefined, // state
+          { accessToken, refreshToken }
+        );
+
+        let goodsId = null;
+        if (goodsData && goodsData.data && goodsData.data.length > 0) {
+          goodsId = goodsData.data[0].goods_id;
+        }
+
+        if (!goodsId) {
+          // If goods not found, add with zero sales
+          sales.push({
+            sku,
+            totalSales: 0,
+            averageDailySales: 0,
+            salesHistory: []
+          });
+          continue;
+        }
+
+        // Now search for order rows using goods_id
         const data = await fetchNextEngineData(
           process.env.NEXT_ENGINE_CLIENT_ID!,
           process.env.NEXT_ENGINE_CLIENT_SECRET!,
           'api_v1_receiveorder_row/search',
           {
-            goods_id: sku,
+            'receive_order_row_goods_id-eq': goodsId, // Updated to use correct parameter format
             receive_order_date_from: startDate,
             receive_order_date_to: endDate,
-            fields: 'goods_id,quantity,receive_order_date'
+            fields: 'receive_order_row_goods_id,receive_order_row_quantity,receive_order_date' // Updated to use correct field names
           },
           undefined, // uid
           undefined, // state
@@ -53,11 +84,11 @@ export async function POST(request: NextRequest) {
         
         if (data && data.data && data.data.length > 0) {
           // Group sales by date
-          const salesByDate = {};
+          const salesByDate: Record<string, number> = {};
           
-          for (const order of data.data) {
-            const date = order.receive_order_date.split(' ')[0]; // Get date part only
-            const quantity = parseInt(order.quantity) || 0;
+          for (const orderRow of data.data) {
+            const date = (orderRow as any).receive_order_date?.split(' ')[0] || ''; // Get date part only
+            const quantity = parseInt((orderRow as any).receive_order_row_quantity) || 0;
             
             if (!salesByDate[date]) {
               salesByDate[date] = 0;
@@ -70,7 +101,7 @@ export async function POST(request: NextRequest) {
           for (const [date, quantity] of Object.entries(salesByDate)) {
             salesHistory.push({
               date,
-              quantity
+              quantity: quantity as number
             });
           }
         }

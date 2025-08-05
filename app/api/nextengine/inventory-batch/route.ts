@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
           process.env.NEXT_ENGINE_CLIENT_SECRET!,
           'api_v1_master_stock/search',
           {
-            stock_goods_id: sku,
-            fields: 'stock_goods_id,stock_quantity,stock_reserved_quantity'
+            'stock_goods_id-eq': sku,
+            fields: 'stock_goods_id,stock_quantity' // Removed invalid 'stock_reserved_quantity' field
           },
           undefined, // uid
           undefined, // state
@@ -44,11 +44,12 @@ export async function POST(request: NextRequest) {
 
         if (data && data.data && data.data.length > 0) {
           const item = data.data[0];
+          const warehouseStock = parseInt(item.stock_quantity) || 0;
           inventory.push({
             sku,
-            warehouseStock: parseInt(item.stock_quantity) || 0,
-            reservedStock: parseInt(item.stock_reserved_quantity) || 0,
-            availableStock: Math.max(0, (parseInt(item.stock_quantity) || 0) - (parseInt(item.stock_reserved_quantity) || 0))
+            warehouseStock,
+            reservedStock: 0, // Reserved quantity not available in Next Engine API
+            availableStock: warehouseStock // Since reserved quantity is unknown, available = warehouse stock
           });
         } else {
           // SKU not found, add with zero stock
