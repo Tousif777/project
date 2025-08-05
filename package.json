@@ -54,7 +54,6 @@
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
-    "googleapis": "^150.0.1",
     "input-otp": "^1.2.4",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -76,11 +75,13 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
     "@types/uuid": "^10.0.0",
+    "@types/xlsx": "^0.0.35",
     "dotenv": "^17.0.0",
     "ts-node": "^10.9.2"
   }
